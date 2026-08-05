@@ -57,4 +57,23 @@ public class MembershipDAO {
             throw e;
         }
     }
+
+    /*
+     * Approves a membership so the reader gains borrowing rights.
+     * Used in test setup to simulate a librarian approving a registration.
+     */
+    public Membership approveMembership(UUID membershipId) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Membership membership = session.get(Membership.class, membershipId);
+            membership.setMembershipStatus(MembershipStatus.APPROVED);
+            session.merge(membership);
+            tx.commit();
+            return membership;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw e;
+        }
+    }
 }

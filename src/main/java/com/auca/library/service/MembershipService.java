@@ -54,4 +54,9 @@ public class MembershipService {
     public MembershipType saveMembershipType(MembershipType membershipType) {
         return membershipDAO.saveMembershipType(membershipType);
     }
+
+    // Allows a librarian to approve a pending membership so the reader can borrow books
+    public Membership approveMembership(UUID membershipId) {
+        return membershipDAO.approveMembership(membershipId);
+    }
 }
