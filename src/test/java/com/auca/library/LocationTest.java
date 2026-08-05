@@ -83,4 +83,41 @@ public class LocationTest {
         duplicate.setLocationType(LocationType.PROVINCE);
         locationService.createLocation(duplicate, null);
     }
+
+    @Test
+    public void validVillageId_returnsCorrectProvinceName() {
+        Location province = new Location();
+        province.setLocationCode("PROV-" + UUID.randomUUID());
+        province.setLocationName("Kigali Province");
+        province.setLocationType(LocationType.PROVINCE);
+        Location savedProvince = locationService.createLocation(province, null);
+
+        Location district = new Location();
+        district.setLocationCode("DIST-" + UUID.randomUUID());
+        district.setLocationName("Gasabo District");
+        district.setLocationType(LocationType.DISTRICT);
+        Location savedDistrict = locationService.createLocation(district, savedProvince.getLocationId());
+
+        Location sector = new Location();
+        sector.setLocationCode("SECT-" + UUID.randomUUID());
+        sector.setLocationName("Kimironko Sector");
+        sector.setLocationType(LocationType.SECTOR);
+        Location savedSector = locationService.createLocation(sector, savedDistrict.getLocationId());
+
+        Location cell = new Location();
+        cell.setLocationCode("CELL-" + UUID.randomUUID());
+        cell.setLocationName("Kibagabaga Cell");
+        cell.setLocationType(LocationType.CELL);
+        Location savedCell = locationService.createLocation(cell, savedSector.getLocationId());
+
+        Location village = new Location();
+        village.setLocationCode("VILL-" + UUID.randomUUID());
+        village.setLocationName("Test Village");
+        village.setLocationType(LocationType.VILLAGE);
+        Location savedVillage = locationService.createLocation(village, savedCell.getLocationId());
+
+        String provinceName = locationService.getProvinceNameByVillageId(savedVillage.getLocationId());
+
+        assertEquals("Kigali Province", provinceName);
+    }
 }

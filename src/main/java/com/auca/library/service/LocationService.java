@@ -21,4 +21,12 @@ public class LocationService {
         }
         return locationDAO.createLocation(location, parentId);
     }
+
+    public String getProvinceNameByVillageId(UUID villageId) {
+        String provinceName = locationDAO.getProvinceNameByVillageId(villageId);
+        if (provinceName == null) {
+            throw new IllegalArgumentException("No province found for village id: " + villageId);
+        }
+        return provinceName;
+    }
 }

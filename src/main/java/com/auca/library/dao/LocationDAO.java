@@ -50,4 +50,19 @@ public class LocationDAO {
             return session.get(Location.class, id);
         }
     }
+
+    public String getProvinceNameByVillageId(UUID villageId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            // Traverse: village -> cell -> sector -> district -> province
+            String hql = "SELECT province.locationName FROM Location village " +
+                         "JOIN village.parent cell " +
+                         "JOIN cell.parent sector " +
+                         "JOIN sector.parent district " +
+                         "JOIN district.parent province " +
+                         "WHERE village.locationId = :villageId";
+            return session.createQuery(hql, String.class)
+                    .setParameter("villageId", villageId)
+                    .uniqueResult();
+        }
+    }
 }
