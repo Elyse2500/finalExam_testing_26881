@@ -35,4 +35,20 @@ public class ShelfService {
     public Room saveRoom(Room room) {
         return shelfDAO.saveRoom(room);
     }
+
+    /*
+     * Returns the total number of books stored across all shelves in the given room.
+     * Useful for the librarian to see how loaded a particular room is.
+     */
+    public int countBooksInRoom(UUID roomId) {
+        return shelfDAO.countBooksInRoom(roomId);
+    }
+
+    /*
+     * Finds the room that currently holds the smallest number of books.
+     * The librarian uses this to decide where to place new arrivals.
+     */
+    public Room findRoomWithFewestBooks() {
+        return shelfDAO.findRoomWithFewestBooks();
+    }
 }

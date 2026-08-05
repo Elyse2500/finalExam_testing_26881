@@ -105,4 +105,45 @@ public class ShelfDAO {
             return session.get(Book.class, bookId);
         }
     }
+
+    /*
+     * Counts every book sitting on any shelf that belongs to the given room.
+     * The query sums initialStock across all shelves in the room because
+     * initialStock tracks the total number of physical copies placed there,
+     * regardless of whether they are currently borrowed or on the shelf.
+     */
+    public int countBooksInRoom(UUID roomId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Long count = session.createQuery(
+                    "SELECT COALESCE(SUM(s.initialStock), 0) FROM Shelf s WHERE s.room.roomId = :roomId",
+                    Long.class)
+                    .setParameter("roomId", roomId)
+                    .uniqueResult();
+            return count == null ? 0 : count.intValue();
+        }
+    }
+
+    /*
+     * Scans every room and returns the one whose shelves hold the fewest books in total.
+     * Rooms with no shelves at all are treated as having zero books and can win.
+     * The result is ordered ascending so the first row is always the least-stocked room.
+     */
+    public Room findRoomWithFewestBooks() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                    "SELECT r FROM Room r LEFT JOIN Shelf s ON s.room.roomId = r.roomId " +
+                    "GROUP BY r.roomId, r.roomCode " +
+                    "ORDER BY COALESCE(SUM(s.initialStock), 0) ASC",
+                    Room.class)
+                    .setMaxResults(1)
+                    .uniqueResult();
+        }
+    }
+
+    // Fetches a room by its UUID — used to reload and verify state after operations
+    public Room findRoomById(UUID roomId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(Room.class, roomId);
+        }
+    }
 }

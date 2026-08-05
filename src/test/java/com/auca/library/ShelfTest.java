@@ -106,4 +106,71 @@ public class ShelfTest {
         assertNotNull(updated.getRoom());
         assertEquals(room.getRoomId(), updated.getRoom().getRoomId());
     }
+
+    // --- Requirement 10: Count books in a room ---
+
+    @Test
+    public void roomWithMultipleShelves_sumsBookCountsAcrossShelves() {
+        Room room = createRoom();
+
+        // First shelf gets 2 books placed on it
+        Shelf shelf1 = createShelf();
+        shelfService.assignShelfToRoom(shelf1.getShelfId(), room.getRoomId());
+        Book b1 = createBook();
+        Book b2 = createBook();
+        shelfService.assignBookToShelf(b1.getBookId(), shelf1.getShelfId());
+        shelfService.assignBookToShelf(b2.getBookId(), shelf1.getShelfId());
+
+        // Second shelf gets 3 books placed on it
+        Shelf shelf2 = createShelf();
+        shelfService.assignShelfToRoom(shelf2.getShelfId(), room.getRoomId());
+        Book b3 = createBook();
+        Book b4 = createBook();
+        Book b5 = createBook();
+        shelfService.assignBookToShelf(b3.getBookId(), shelf2.getShelfId());
+        shelfService.assignBookToShelf(b4.getBookId(), shelf2.getShelfId());
+        shelfService.assignBookToShelf(b5.getBookId(), shelf2.getShelfId());
+
+        // The room total must be the combined count from both shelves
+        int total = shelfService.countBooksInRoom(room.getRoomId());
+        assertEquals(5, total);
+    }
+
+    @Test
+    public void roomWithNoShelves_returnsZero() {
+        // A freshly created room has no shelves, so the book count must be zero
+        Room emptyRoom = createRoom();
+        int total = shelfService.countBooksInRoom(emptyRoom.getRoomId());
+        assertEquals(0, total);
+    }
+
+    // --- Requirement 11: Find the room with the fewest books ---
+
+    @Test
+    public void multipleRooms_returnsRoomWithLowestBookCount() {
+        // Room A gets 4 books spread across two shelves
+        Room roomA = createRoom();
+        Shelf shelfA = createShelf();
+        shelfService.assignShelfToRoom(shelfA.getShelfId(), roomA.getRoomId());
+        for (int i = 0; i < 4; i++) {
+            shelfService.assignBookToShelf(createBook().getBookId(), shelfA.getShelfId());
+        }
+
+        // Room B gets only 1 book — it should be identified as the least-stocked room
+        Room roomB = createRoom();
+        Shelf shelfB = createShelf();
+        shelfService.assignShelfToRoom(shelfB.getShelfId(), roomB.getRoomId());
+        shelfService.assignBookToShelf(createBook().getBookId(), shelfB.getShelfId());
+
+        // Room C gets 7 books, making it the most stocked of the three
+        Room roomC = createRoom();
+        Shelf shelfC = createShelf();
+        shelfService.assignShelfToRoom(shelfC.getShelfId(), roomC.getRoomId());
+        for (int i = 0; i < 7; i++) {
+            shelfService.assignBookToShelf(createBook().getBookId(), shelfC.getShelfId());
+        }
+
+        Room fewest = shelfService.findRoomWithFewestBooks();
+        assertEquals(roomB.getRoomId(), fewest.getRoomId());
+    }
 }
