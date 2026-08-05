@@ -76,6 +76,36 @@ public class BorrowerDAO {
     }
 
     /*
+     * Loads a single borrowing record by its UUID.
+     * Used when we need to inspect or update a specific transaction,
+     * for example when calculating the late fee after a return.
+     */
+    public Borrower findById(UUID borrowerId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(Borrower.class, borrowerId);
+        }
+    }
+
+    /*
+     * Writes the computed fine back to the borrower record so the
+     * amount is persisted and visible to the librarian at the desk.
+     */
+    public Borrower updateFine(UUID borrowerId, int fine) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Borrower borrower = session.get(Borrower.class, borrowerId);
+            borrower.setFine(fine);
+            session.merge(borrower);
+            tx.commit();
+            return borrower;
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            throw e;
+        }
+    }
+
+    /*
      * Saves a book that does not yet exist in the database.
      * Used in test setup to prepare AVAILABLE books before borrowing.
      */

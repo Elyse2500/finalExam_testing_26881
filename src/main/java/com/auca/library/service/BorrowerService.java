@@ -99,4 +99,35 @@ public class BorrowerService {
                     " plan allows a maximum of " + maxBooks + " books at a time.");
         }
     }
+
+    /*
+     * Calculates the late fee for a borrowing transaction.
+     * The fee is: number of days past the due date x the daily rate stored on the record.
+     * If the book was returned on time or the due date has not passed yet, the fee is zero.
+     * When the book has not been returned yet we measure lateness against today's date
+     * so the librarian can quote the running total to the reader at the desk.
+     */
+    public int calculateLateFee(UUID borrowerId) {
+        Borrower borrower = borrowerDAO.findById(borrowerId);
+        if (borrower == null) {
+            throw new IllegalArgumentException("Borrowing record not found: " + borrowerId);
+        }
+
+        // Use the actual return date if the book is back, otherwise measure against today
+        Date comparisonDate = borrower.getReturnDate() != null ? borrower.getReturnDate() : new Date();
+        Date dueDate = borrower.getDueDate();
+
+        if (!comparisonDate.after(dueDate)) {
+            // Returned on time — no charge applies
+            return 0;
+        }
+
+        long diffMs = comparisonDate.getTime() - dueDate.getTime();
+        long daysLate = diffMs / (1000L * 60 * 60 * 24);
+        int fee = (int) daysLate * borrower.getLateChargeFee();
+
+        // Persist the computed fine so the record stays up to date
+        borrowerDAO.updateFine(borrowerId, fee);
+        return fee;
+    }
 }

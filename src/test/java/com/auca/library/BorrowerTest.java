@@ -13,6 +13,8 @@ import com.auca.library.service.UserService;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -208,5 +210,95 @@ public class BorrowerTest {
         User user = createUser();
         Book book = createAvailableBook();
         borrowerService.borrowBook(UUID.fromString(user.getPersonId()), book.getBookId());
+    }
+
+    // --- Requirement 12: Late fee calculation ---
+
+    /*
+     * Builds a borrower record with manually set pickup, due, and return dates
+     * so we can simulate any late-return scenario without waiting real days.
+     * The lateChargeFee on the record drives the per-day penalty.
+     */
+    private Borrower createBorrowerWithDates(User user, Book book,
+                                              Date pickupDate, Date dueDate,
+                                              Date returnDate, int dailyRate) {
+        Borrower borrower = new Borrower();
+        borrower.setId(UUID.randomUUID());
+        borrower.setReader(user);
+        borrower.setBook(book);
+        borrower.setPickupDate(pickupDate);
+        borrower.setDueDate(dueDate);
+        borrower.setReturnDate(returnDate);
+        borrower.setFine(0);
+        borrower.setLateChargeFee(dailyRate);
+        return borrowerDAO.save(borrower);
+    }
+
+    // Shifts a date by the given number of days — negative values go into the past
+    private Date shiftDays(Date base, int days) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(base);
+        cal.add(Calendar.DAY_OF_YEAR, days);
+        return cal.getTime();
+    }
+
+    @Test
+    public void returnedOnDueDate_feeIsZero() {
+        User user = createUser();
+        Book book = createAvailableBook();
+        Date today = new Date();
+        // Pickup was 14 days ago, due today, returned today — no late charge
+        Borrower borrower = createBorrowerWithDates(
+                user, book, shiftDays(today, -14), today, today, 50);
+        assertEquals(0, borrowerService.calculateLateFee(borrower.getId()));
+    }
+
+    @Test
+    public void goldMember_returnedThreeDaysLate_feeIs150() {
+        User user = createUser();
+        Book book = createAvailableBook();
+        Date today = new Date();
+        // Due 3 days ago, returned today — 3 days late at Gold rate of 50 Rwf = 150 Rwf
+        Date dueDate = shiftDays(today, -3);
+        Borrower borrower = createBorrowerWithDates(
+                user, book, shiftDays(today, -17), dueDate, today, 50);
+        assertEquals(150, borrowerService.calculateLateFee(borrower.getId()));
+    }
+
+    @Test
+    public void silverMember_returnedFiveDaysLate_feeIs150() {
+        User user = createUser();
+        Book book = createAvailableBook();
+        Date today = new Date();
+        // Due 5 days ago, returned today — 5 days late at Silver rate of 30 Rwf = 150 Rwf
+        Date dueDate = shiftDays(today, -5);
+        Borrower borrower = createBorrowerWithDates(
+                user, book, shiftDays(today, -19), dueDate, today, 30);
+        assertEquals(150, borrowerService.calculateLateFee(borrower.getId()));
+    }
+
+    @Test
+    public void striverMember_returnedOneDayLate_feeIs10() {
+        User user = createUser();
+        Book book = createAvailableBook();
+        Date today = new Date();
+        // Due yesterday, returned today — 1 day late at Striver rate of 10 Rwf = 10 Rwf
+        Date dueDate = shiftDays(today, -1);
+        Borrower borrower = createBorrowerWithDates(
+                user, book, shiftDays(today, -15), dueDate, today, 10);
+        assertEquals(10, borrowerService.calculateLateFee(borrower.getId()));
+    }
+
+    @Test
+    public void notYetReturned_feeIsComputedAgainstToday() {
+        User user = createUser();
+        Book book = createAvailableBook();
+        Date today = new Date();
+        // Due 4 days ago, book not yet returned — fee is measured against today
+        Date dueDate = shiftDays(today, -4);
+        Borrower borrower = createBorrowerWithDates(
+                user, book, shiftDays(today, -18), dueDate, null, 50);
+        // 4 days overdue at 50 Rwf per day = 200 Rwf
+        assertEquals(200, borrowerService.calculateLateFee(borrower.getId()));
     }
 }
