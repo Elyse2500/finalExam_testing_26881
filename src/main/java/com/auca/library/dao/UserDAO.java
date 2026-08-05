@@ -4,6 +4,7 @@ import com.auca.library.domain.User;
 import com.auca.library.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
+import java.util.UUID;
 
 public class UserDAO {
 
@@ -17,6 +18,23 @@ public class UserDAO {
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw e;
+        }
+    }
+
+    // Look up a user by their username — used during login to verify identity
+    public User findByUsername(String username) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                    "FROM User u WHERE u.userName = :username", User.class)
+                    .setParameter("username", username)
+                    .uniqueResult();
+        }
+    }
+
+    // Fetch user by their UUID primary key
+    public User findById(UUID userId) {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.get(User.class, userId.toString());
         }
     }
 

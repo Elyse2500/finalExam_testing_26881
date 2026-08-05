@@ -75,4 +75,50 @@ public class UserTest {
 
         assertEquals("Western Province", provinceName);
     }
+
+    // --- Requirement 4: Authentication tests ---
+
+    /*
+     * Helper that creates and saves a user with a known username and password.
+     * Reused across all authentication test cases to keep things consistent.
+     */
+    private User createTestUser(String username, String password) {
+        User user = new User();
+        user.setPersonId(UUID.randomUUID().toString());
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setGender(Gender.MALE);
+        user.setPhoneNumber("0780000099");
+        user.setUserName(username);
+        user.setPassword(password);
+        user.setRole(RoleType.STUDENT);
+        return userService.save(user);
+    }
+
+    @Test
+    public void authenticate_correctCredentials_returnsTrue() {
+        String username = "john_" + UUID.randomUUID();
+        createTestUser(username, "securePass1");
+        assertTrue(userService.authenticate(username, "securePass1"));
+    }
+
+    @Test
+    public void authenticate_wrongPassword_returnsFalse() {
+        String username = "jane_" + UUID.randomUUID();
+        createTestUser(username, "correctPass");
+        assertFalse(userService.authenticate(username, "wrongPass"));
+    }
+
+    @Test
+    public void authenticate_unknownUsername_returnsFalse() {
+        // No user with this username exists in the database
+        assertFalse(userService.authenticate("ghost_user_xyz", "anyPassword"));
+    }
+
+    @Test
+    public void authenticate_nullOrBlankInput_returnsFalse() {
+        assertFalse(userService.authenticate(null, null));
+        assertFalse(userService.authenticate("", ""));
+        assertFalse(userService.authenticate("   ", "   "));
+    }
 }
