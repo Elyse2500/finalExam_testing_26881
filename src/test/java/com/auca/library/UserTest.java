@@ -27,7 +27,6 @@ public class UserTest {
 
     @Test
     public void validPersonId_returnsCorrectProvinceName() {
-        // Build full hierarchy: Province -> District -> Sector -> Cell -> Village
         Location province = new Location();
         province.setLocationCode("PROV-" + UUID.randomUUID());
         province.setLocationName("Western Province");
@@ -58,7 +57,6 @@ public class UserTest {
         village.setLocationType(LocationType.VILLAGE);
         Location savedVillage = locationService.createLocation(village, savedCell.getLocationId());
 
-        // Create user assigned to the village
         User user = new User();
         user.setPersonId(UUID.randomUUID().toString());
         user.setFirstName("Alice");
@@ -76,12 +74,6 @@ public class UserTest {
         assertEquals("Western Province", provinceName);
     }
 
-    // --- Requirement 4: Authentication tests ---
-
-    /*
-     * Helper that creates and saves a user with a known username and password.
-     * Reused across all authentication test cases to keep things consistent.
-     */
     private User createTestUser(String username, String password) {
         User user = new User();
         user.setPersonId(UUID.randomUUID().toString());
@@ -111,7 +103,6 @@ public class UserTest {
 
     @Test
     public void authenticate_unknownUsername_returnsFalse() {
-        // No user with this username exists in the database
         assertFalse(userService.authenticate("ghost_user_xyz", "anyPassword"));
     }
 

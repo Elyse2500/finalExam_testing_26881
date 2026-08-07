@@ -26,10 +26,6 @@ public class MembershipTest {
         userService = new UserService();
     }
 
-    /*
-     * Saves a basic user without a location since membership tests
-     * do not depend on the location hierarchy.
-     */
     private User createUser() {
         User user = new User();
         user.setPersonId(UUID.randomUUID().toString());
@@ -43,10 +39,6 @@ public class MembershipTest {
         return userService.save(user);
     }
 
-    /*
-     * Creates a Gold membership type with the defined business rules:
-     * 50 Rwf per day, maximum of 5 books allowed.
-     */
     private MembershipType createGoldType() {
         MembershipType gold = new MembershipType();
         gold.setMembershipTypeId(UUID.randomUUID());
@@ -64,7 +56,6 @@ public class MembershipTest {
         Membership membership = membershipService.registerMembership(
                 UUID.fromString(user.getPersonId()), gold.getMembershipTypeId());
 
-        // Newly registered memberships must start as PENDING until a librarian approves
         assertNotNull(membership.getMembershipId());
         assertEquals(MembershipStatus.PENDING, membership.getMembershipStatus());
         assertEquals(gold.getMembershipTypeId(), membership.getMembershipType().getMembershipTypeId());
@@ -77,10 +68,7 @@ public class MembershipTest {
         MembershipType gold = createGoldType();
         UUID userId = UUID.fromString(user.getPersonId());
 
-        // First registration should succeed
         membershipService.registerMembership(userId, gold.getMembershipTypeId());
-
-        // Second registration for the same user must be rejected
         membershipService.registerMembership(userId, gold.getMembershipTypeId());
     }
 }

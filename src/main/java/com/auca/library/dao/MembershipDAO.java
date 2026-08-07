@@ -10,7 +10,6 @@ import java.util.UUID;
 
 public class MembershipDAO {
 
-    // Persist a new membership record into the database
     public Membership save(Membership membership) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -24,7 +23,6 @@ public class MembershipDAO {
         }
     }
 
-    // Check whether the user already holds an APPROVED or PENDING membership
     public Membership findActiveMembership(UUID userId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
@@ -37,14 +35,12 @@ public class MembershipDAO {
         }
     }
 
-    // Retrieve the membership plan details by its UUID
     public MembershipType findMembershipTypeById(UUID membershipTypeId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.get(MembershipType.class, membershipTypeId);
         }
     }
 
-    // Persist a new membership type (Gold, Silver, Striver)
     public MembershipType saveMembershipType(MembershipType membershipType) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
@@ -58,10 +54,6 @@ public class MembershipDAO {
         }
     }
 
-    /*
-     * Approves a membership so the reader gains borrowing rights.
-     * Used in test setup to simulate a librarian approving a registration.
-     */
     public Membership approveMembership(UUID membershipId) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {

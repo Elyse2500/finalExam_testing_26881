@@ -21,7 +21,6 @@ public class UserDAO {
         }
     }
 
-    // Look up a user by their username — used during login to verify identity
     public User findByUsername(String username) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.createQuery(
@@ -31,7 +30,6 @@ public class UserDAO {
         }
     }
 
-    // Fetch user by their UUID primary key
     public User findById(UUID userId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             return session.get(User.class, userId.toString());

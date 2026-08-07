@@ -35,14 +35,12 @@ public class LocationTest {
 
     @Test
     public void createDistrict_withValidProvinceParent_succeeds() {
-        // First create a province
         Location province = new Location();
         province.setLocationCode("PROV-" + UUID.randomUUID());
         province.setLocationName("Eastern Province");
         province.setLocationType(LocationType.PROVINCE);
         Location savedProvince = locationService.createLocation(province, null);
 
-        // Then create a district under it
         Location district = new Location();
         district.setLocationCode("DIST-" + UUID.randomUUID());
         district.setLocationName("Gasabo District");
@@ -63,7 +61,6 @@ public class LocationTest {
         district.setLocationName("Gasabo District");
         district.setLocationType(LocationType.DISTRICT);
 
-        // Pass a random UUID that does not exist in DB
         locationService.createLocation(district, UUID.randomUUID());
     }
 

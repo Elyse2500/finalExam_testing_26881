@@ -6,7 +6,6 @@ import com.auca.library.domain.Membership;
 import com.auca.library.domain.MembershipType;
 import com.auca.library.domain.User;
 import com.auca.library.domain.enums.MembershipStatus;
-
 import java.util.Date;
 import java.util.UUID;
 
@@ -15,31 +14,23 @@ public class MembershipService {
     private final MembershipDAO membershipDAO = new MembershipDAO();
     private final UserDAO userDAO = new UserDAO();
 
-    /*
-     * Registers a membership for the given user under the chosen plan.
-     * Before creating a new record, we check whether the user already
-     * holds an active (APPROVED or PENDING) membership to prevent duplicates.
-     * New memberships always start with PENDING status until approved by a librarian.
-     */
     public Membership registerMembership(UUID userId, UUID membershipTypeId) {
-        // Reject the request if the user already has an active membership
         Membership existing = membershipDAO.findActiveMembership(userId);
         if (existing != null) {
-            throw new IllegalStateException(
-                    "User already has an active membership. Cancel it before registering a new one.");
+            throw new IllegalStateException("user already has an active membership");
         }
 
         User user = userDAO.findById(userId);
         if (user == null) {
-            throw new IllegalArgumentException("User not found for id: " + userId);
+            throw new IllegalArgumentException("user not found: " + userId);
         }
 
         MembershipType membershipType = membershipDAO.findMembershipTypeById(membershipTypeId);
         if (membershipType == null) {
-            throw new IllegalArgumentException("Membership type not found for id: " + membershipTypeId);
+            throw new IllegalArgumentException("membership type not found: " + membershipTypeId);
         }
 
-        // Build the membership record with today as the registration date
+        // new membership starts as PENDING until librarian approves
         Membership membership = new Membership();
         membership.setMembershipId(UUID.randomUUID());
         membership.setMembershipCode("MEM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -55,7 +46,6 @@ public class MembershipService {
         return membershipDAO.saveMembershipType(membershipType);
     }
 
-    // Allows a librarian to approve a pending membership so the reader can borrow books
     public Membership approveMembership(UUID membershipId) {
         return membershipDAO.approveMembership(membershipId);
     }

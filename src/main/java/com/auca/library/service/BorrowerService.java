@@ -9,44 +9,31 @@ import com.auca.library.domain.User;
 import com.auca.library.domain.enums.BookStatus;
 import com.auca.library.domain.enums.MembershipStatus;
 import com.auca.library.exception.BorrowLimitExceededException;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
 
 public class BorrowerService {
 
-    // Standard loan period given to every borrower regardless of membership tier
     private static final int LOAN_PERIOD_DAYS = 14;
 
     private final BorrowerDAO borrowerDAO = new BorrowerDAO();
     private final MembershipDAO membershipDAO = new MembershipDAO();
 
-    /*
-     * Processes a book borrowing request for the given reader.
-     * Steps performed:
-     *   1. Confirm the book exists and is currently available on the shelf.
-     *   2. Confirm the reader exists in the system.
-     *   3. Check the reader has not exceeded their membership borrow limit.
-     *   4. Create the borrower record with today as pickup date and
-     *      pickup + 14 days as the due date. Fine starts at zero.
-     *   5. Mark the book as BORROWED so no one else can take it.
-     */
     public Borrower borrowBook(UUID readerId, UUID bookId) {
         Book book = borrowerDAO.findBookById(bookId);
         if (book == null) {
-            throw new IllegalArgumentException("Book not found: " + bookId);
+            throw new IllegalArgumentException("book not found: " + bookId);
         }
         if (book.getBookStatus() != BookStatus.AVAILABLE) {
-            throw new IllegalStateException("Book is not available for borrowing. Current status: " + book.getBookStatus());
+            throw new IllegalStateException("book is not available, status: " + book.getBookStatus());
         }
 
         User reader = borrowerDAO.findUserById(readerId);
         if (reader == null) {
-            throw new IllegalArgumentException("Reader not found: " + readerId);
+            throw new IllegalArgumentException("reader not found: " + readerId);
         }
 
-        // Enforce membership borrow limit before proceeding
         validateBorrowLimit(readerId);
 
         Date pickupDate = new Date();
@@ -62,63 +49,39 @@ public class BorrowerService {
         borrower.setPickupDate(pickupDate);
         borrower.setDueDate(dueDate);
         borrower.setFine(0);
-        // Late charge fee is taken from the membership type price
         Membership membership = membershipDAO.findActiveMembership(readerId);
         borrower.setLateChargeFee(membership != null ? membership.getMembershipType().getPrice() : 0);
 
         Borrower saved = borrowerDAO.save(borrower);
-
-        // Flip the book status so the catalogue reflects it is no longer on the shelf
         borrowerDAO.updateBookStatus(bookId, BookStatus.BORROWED);
-
         return saved;
     }
 
-    /*
-     * Validates that the reader has not reached the borrow ceiling set by their plan.
-     * Rules:
-     *   - Gold:    up to 5 books
-     *   - Silver:  up to 3 books
-     *   - Striver: up to 2 books
-     * A reader with no APPROVED membership is blocked entirely.
-     */
     public void validateBorrowLimit(UUID readerId) {
         Membership membership = membershipDAO.findActiveMembership(readerId);
 
         if (membership == null || membership.getMembershipStatus() != MembershipStatus.APPROVED) {
-            throw new BorrowLimitExceededException(
-                    "Reader does not have an approved membership and cannot borrow books.");
+            throw new BorrowLimitExceededException("reader has no approved membership");
         }
 
         int maxBooks = membership.getMembershipType().getMaxBooks();
         long activeBorrows = borrowerDAO.countActiveByReader(readerId);
 
         if (activeBorrows >= maxBooks) {
-            throw new BorrowLimitExceededException(
-                    "Borrow limit reached. Your " + membership.getMembershipType().getMembershipName() +
-                    " plan allows a maximum of " + maxBooks + " books at a time.");
+            throw new BorrowLimitExceededException("limit reached, max allowed is " + maxBooks + " books");
         }
     }
 
-    /*
-     * Calculates the late fee for a borrowing transaction.
-     * The fee is: number of days past the due date x the daily rate stored on the record.
-     * If the book was returned on time or the due date has not passed yet, the fee is zero.
-     * When the book has not been returned yet we measure lateness against today's date
-     * so the librarian can quote the running total to the reader at the desk.
-     */
     public int calculateLateFee(UUID borrowerId) {
         Borrower borrower = borrowerDAO.findById(borrowerId);
         if (borrower == null) {
-            throw new IllegalArgumentException("Borrowing record not found: " + borrowerId);
+            throw new IllegalArgumentException("borrower record not found: " + borrowerId);
         }
 
-        // Use the actual return date if the book is back, otherwise measure against today
         Date comparisonDate = borrower.getReturnDate() != null ? borrower.getReturnDate() : new Date();
         Date dueDate = borrower.getDueDate();
 
         if (!comparisonDate.after(dueDate)) {
-            // Returned on time — no charge applies
             return 0;
         }
 
@@ -126,7 +89,6 @@ public class BorrowerService {
         long daysLate = diffMs / (1000L * 60 * 60 * 24);
         int fee = (int) daysLate * borrower.getLateChargeFee();
 
-        // Persist the computed fine so the record stays up to date
         borrowerDAO.updateFine(borrowerId, fee);
         return fee;
     }

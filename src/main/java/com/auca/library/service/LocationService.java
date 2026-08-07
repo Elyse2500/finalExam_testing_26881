@@ -10,23 +10,20 @@ public class LocationService {
     private final LocationDAO locationDAO = new LocationDAO();
 
     public Location createLocation(Location location, UUID parentId) {
-        // Province must have no parent
         if (location.getLocationType() == LocationType.PROVINCE && parentId != null) {
-            throw new IllegalArgumentException("Province cannot have a parent location.");
+            throw new IllegalArgumentException("Province cannot have a parent.");
         }
-        // Non-province must have a parent
         if (location.getLocationType() != LocationType.PROVINCE && parentId == null) {
-            throw new IllegalArgumentException(
-                    location.getLocationType() + " must have a parent location.");
+            throw new IllegalArgumentException(location.getLocationType() + " must have a parent.");
         }
         return locationDAO.createLocation(location, parentId);
     }
 
     public String getProvinceNameByVillageId(UUID villageId) {
-        String provinceName = locationDAO.getProvinceNameByVillageId(villageId);
-        if (provinceName == null) {
-            throw new IllegalArgumentException("No province found for village id: " + villageId);
+        String name = locationDAO.getProvinceNameByVillageId(villageId);
+        if (name == null) {
+            throw new IllegalArgumentException("province not found for village: " + villageId);
         }
-        return provinceName;
+        return name;
     }
 }

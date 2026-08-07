@@ -9,29 +9,26 @@ import java.util.UUID;
 public class LocationDAO {
 
     public Location createLocation(Location location, UUID parentId) {
-        // Check for duplicate location code
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             Long count = session.createQuery(
                     "SELECT COUNT(l) FROM Location l WHERE l.locationCode = :code", Long.class)
                     .setParameter("code", location.getLocationCode())
                     .uniqueResult();
             if (count != null && count > 0) {
-                throw new IllegalArgumentException("Duplicate location code: " + location.getLocationCode());
+                throw new IllegalArgumentException("this code is taken: " + location.getLocationCode());
             }
         }
 
-        // Resolve parent if provided
         if (parentId != null) {
             try (Session session = HibernateUtil.getSessionFactory().openSession()) {
                 Location parent = session.get(Location.class, parentId);
                 if (parent == null) {
-                    throw new IllegalArgumentException("Parent location not found for id: " + parentId);
+                    throw new IllegalArgumentException("cant find parent with id: " + parentId);
                 }
                 location.setParent(parent);
             }
         }
 
-        // Persist
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
@@ -53,7 +50,6 @@ public class LocationDAO {
 
     public String getProvinceNameByVillageId(UUID villageId) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // Traverse: village -> cell -> sector -> district -> province
             String hql = "SELECT province.locationName FROM Location village " +
                          "JOIN village.parent cell " +
                          "JOIN cell.parent sector " +

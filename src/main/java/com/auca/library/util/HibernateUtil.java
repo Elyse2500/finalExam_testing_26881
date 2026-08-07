@@ -11,19 +11,15 @@ public class HibernateUtil {
     private static SessionFactory buildSessionFactory() {
         Configuration config = new Configuration();
 
-        // Database connection
         config.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
         config.setProperty("hibernate.connection.url", "jdbc:postgresql://localhost:5432/auca_library_db");
         config.setProperty("hibernate.connection.username", "postgres");
         config.setProperty("hibernate.connection.password", "Elyse@1234");
-
-        // Hibernate settings
         config.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
         config.setProperty("hibernate.hbm2ddl.auto", "update");
         config.setProperty("hibernate.show_sql", "true");
         config.setProperty("hibernate.format_sql", "true");
 
-        // Entity mappings
         config.addAnnotatedClass(Location.class);
         config.addAnnotatedClass(User.class);
         config.addAnnotatedClass(Book.class);
